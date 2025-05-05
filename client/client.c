@@ -5,21 +5,7 @@
 #include <arpa/inet.h>        // sockaddr_in, inet_pton, htons
 #include <sys/socket.h>       // socket, connect, send
 #include <SDL2/SDL.h>         // SDL2 main headers
-#define MAX_PLAYERS 16
-
-struct MovementPacket {
-    int type;
-    float x;
-    float y;
-};
-
-struct BroadcastPacket {
-    int count;
-    struct {
-        float x;
-        float y;
-    } players[MAX_PLAYERS];
-};
+#include "../packet.h"
 
 
 int main() {
@@ -91,7 +77,7 @@ int main() {
         struct BroadcastPacket packet;
         int bytes_recv = recv(sock_fd, &packet, sizeof(packet), 0);
         SDL_Rect other;
-        other.w = 100;
+        other.w = 50;
         other.h = 50;
 
         if(bytes_recv > 0){

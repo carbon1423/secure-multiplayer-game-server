@@ -5,32 +5,9 @@
 #include <arpa/inet.h>      // inet_ntoa, htons, sockaddr_in
 #include <sys/socket.h>     // socket, bind, listen, accept, recv, send
 #include <pthread.h>
-#define MAX_CLIENTS 16
+#include "../packet.h"
 
-struct BroadcastPacket {
-    int count;
-    struct {
-        float x;
-        float y;
-    } players[MAX_CLIENTS];
-};
 
-struct MovementPacket {
-    int type;
-    float x;
-    float y;
-};
-
-typedef struct {
-    int active;
-    int client_fd;
-    float x, y;
-} Player;
-
-typedef struct {
-    int client_fd;
-    int player_id;
-} ClientArgs;
 
 
 pthread_mutex_t players_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -64,9 +41,10 @@ void *handle_client(void *arg){
         perror("recv");
     }
     close(client_fd);
-    pthread_mutex_lock(&players_lock);
     players[player_id].active = 0;
-    pthread_mutex_unlock(&players_lock);
+    players[player_id].client_fd = -1;
+    players[player_id].x = 0;
+    players[player_id].y = 0;
     pthread_exit(NULL);
 
 }
