@@ -5,6 +5,7 @@
 #include <arpa/inet.h>      // inet_ntoa, htons, sockaddr_in
 #include <sys/socket.h>     // socket, bind, listen, accept, recv, send
 #include <pthread.h>
+#include <math.h>
 #include "../packet.h"
 
 
@@ -20,21 +21,60 @@ void *handle_client(void *arg){
     int player_id = args->player_id;
     free(arg);
     int bytes_received;
-    struct MovementPacket move;
+    InputPacket input;
     
-    while((bytes_received = recv(client_fd, &move, sizeof(move), 0)) > 0){
-        if(bytes_received != sizeof(move)){
+    while((bytes_received = recv(client_fd, &input, sizeof(input), 0)) > 0){
+        if(bytes_received != sizeof(input)){
             printf("Partial packet received\n");
         }
 
-        if (move.type == 1) {
-            printf("Client %d moved to (%.2f, %.2f)\n", client_fd, move.x, move.y);
+        if (input.type == 1) {
+            float ax = 0;
+            if(input.left){
+                ax = -ACCEL;
+            }else if(input.right){
+                ax = ACCEL;
+            }
+            
             pthread_mutex_lock(&players_lock);
-            players[player_id].x = move.x;
-            players[player_id].y = move.y;
+            // players[player_id].x = move.x;
+            // players[player_id].y = move.y;
+            players[player_id].vx += ax;
+            if(ax == 0){
+                players[player_id].vx *= FRICTION;
+            }
+            if(fabs(players[player_id].vx) < 0.05f){
+                players[player_id].vx = 0;
+            }
+            if (players[player_id].vx > MAX_SPEED){ 
+                players[player_id].vx = MAX_SPEED;
+            }
+            if (players[player_id].vx < -MAX_SPEED){ 
+                players[player_id].vx = -MAX_SPEED;
+            }
+            players[player_id].x += players[player_id].vx;
+
+            if(!players[player_id].on_ground){
+                players[player_id].vy += 0.7;
+            }
+            players[player_id].y += players[player_id].vy;
+
+            if(players[player_id].y >= 550){
+                players[player_id].y = 550;
+                players[player_id].vy = 0;
+                players[player_id].on_ground = 1;
+            }else{
+                players[player_id].on_ground = 0;
+            }
+
+            if(input.jump && players[player_id].on_ground){
+                players[player_id].vy = -10;
+                players[player_id].on_ground = 0;
+            }
             pthread_mutex_unlock(&players_lock);
+            printf("Client %d moved to (%.2f, %.2f)\n", client_fd, players[player_id].x, players[player_id].y);
         } else {
-            printf("Unknown packet type: %d\n", move.type);
+            printf("Unknown packet type: %d\n", input.type);
         }
     }
     if (bytes_received < 0) {

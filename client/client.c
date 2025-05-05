@@ -11,14 +11,14 @@
 int main() {
     const int FPS = 60;
     const Uint32 frameDelay = 1000 / FPS;  // ~16 ms
-    float vy = 0;
-    float vx = 0;
-    float ax = 0;
-    const float accel = 1.0f;
-    const float max_speed = 10.0f;
-    const float friction = 0.95f;
-    int on_ground = 0;
-    float gravity = 0.5;
+    // float vy = 0;
+    // float vx = 0;
+    // float ax = 0;
+    // const float accel = 1.0f;
+    // const float max_speed = 10.0f;
+    // const float friction = 0.95f;
+    // int on_ground = 0;
+    // float gravity = 0.5;
 
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -28,7 +28,7 @@ int main() {
 
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
 
-    SDL_Rect player = {100, 100, 50, 50};
+    // SDL_Rect player = {100, 100, 50, 50};
     int running = 1;
     SDL_Event event;
 
@@ -51,6 +51,7 @@ int main() {
         perror("connect");
         exit(EXIT_FAILURE);
     }
+
     int player_id;
     int bytes_received = recv(sock_fd, &player_id, sizeof(player_id), 0);
     if(bytes_received < 0){
@@ -63,25 +64,42 @@ int main() {
         Uint32 frameStart = SDL_GetTicks();
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) running = 0;
-            if (event.type == SDL_KEYDOWN) {
-                if (event.key.keysym.sym == SDLK_w && on_ground) {
-                    vy -= 10;
-                    on_ground = 0;
-                } else if (event.key.keysym.sym == SDLK_s) {
-                    vy += 10;
-                } 
+        }
+        //     if (event.type == SDL_KEYDOWN) {
+        //         if (event.key.keysym.sym == SDLK_w && on_ground) {
+        //             vy -= 10;
+        //             on_ground = 0;
+        //         } else if (event.key.keysym.sym == SDLK_s) {
+        //             vy += 10;
+        //         } 
 
                 
-            }
-        }
+        //     }
+        // }
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
-        ax = 0;
+        
+        InputPacket input = {
+            .type = 1,
+            .left = keys[SDL_SCANCODE_A],
+            .right = keys[SDL_SCANCODE_D],
+            .jump = (keys[SDL_SCANCODE_W])
+        };
 
-        if (keys[SDL_SCANCODE_A]) {
-            ax = -accel;
-        } else if (keys[SDL_SCANCODE_D]) {
-            ax = accel;
+        ssize_t sent = send(sock_fd, &input, sizeof(input), 0);
+        if(sent < 0){
+            perror("send");
+            close(sock_fd);
+            exit(EXIT_FAILURE);
         }
+
+
+        // ax = 0;
+
+        // if (keys[SDL_SCANCODE_A]) {
+        //     ax = -accel;
+        // } else if (keys[SDL_SCANCODE_D]) {
+        //     ax = accel;
+        // }
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // black background
         SDL_RenderClear(renderer);
         struct BroadcastPacket broad_pack;
@@ -90,42 +108,42 @@ int main() {
         other.w = 50;
         other.h = 50;
 
-        if (!on_ground) {
-            vy += gravity;     // gravity pulls down
-            player.y += vy;    // update position
-        }
-        if (player.y >= 600-player.h) {
-            player.y = 600-player.h;
-            vy = 0;
-            on_ground = 1;
-        }
-        vx += ax;
+        // if (!on_ground) {
+        //     vy += gravity;     // gravity pulls down
+        //     player.y += vy;    // update position
+        // }
+        // if (player.y >= 600-player.h) {
+        //     player.y = 600-player.h;
+        //     vy = 0;
+        //     on_ground = 1;
+        // }
+        // vx += ax;
 
-        // Apply friction when no horizontal input
-        if (ax == 0) {
-            vx *= friction;
-            if (fabs(vx) < 0.1f) vx = 0;
-        }
+        // // Apply friction when no horizontal input
+        // if (ax == 0) {
+        //     vx *= friction;
+        //     if (fabs(vx) < 0.1f) vx = 0;
+        // }
 
-        // Clamp horizontal speed
-        if (vx > max_speed) {
-            vx = max_speed;
-        }
-        if (vx < -max_speed) {
-            vx = -max_speed;
-        }
+        // // Clamp horizontal speed
+        // if (vx > max_speed) {
+        //     vx = max_speed;
+        // }
+        // if (vx < -max_speed) {
+        //     vx = -max_speed;
+        // }
 
-        // Move player
-        player.x += vx;
+        // // Move player
+        // player.x += vx;
 
-        struct MovementPacket packet;
-        packet.type = 1;
-        packet.x = player.x;
-        packet.y = player.y;
-        ssize_t sent = send(sock_fd, &packet, sizeof(packet), 0);
-        if (sent < 0) {
-            perror("send");
-        }
+        // struct MovementPacket packet;
+        // packet.type = 1;
+        // packet.x = player.x;
+        // packet.y = player.y;
+        // ssize_t sent = send(sock_fd, &packet, sizeof(packet), 0);
+        // if (sent < 0) {
+        //     perror("send");
+        // }
 
 
 
@@ -137,12 +155,18 @@ int main() {
                     SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // blue player
                     SDL_RenderFillRect(renderer, &other);
                 }
+                else{
+                    other.x = broad_pack.players[i].x;
+                    other.y = broad_pack.players[i].y;
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // green player
+                    SDL_RenderFillRect(renderer, &other);
+                }
                 
             }
         }
         
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // green player
-        SDL_RenderFillRect(renderer, &player);
+        // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // green player
+        // SDL_RenderFillRect(renderer, &player);
         SDL_RenderPresent(renderer);
 
         Uint32 frameTime = SDL_GetTicks() - frameStart;
