@@ -16,6 +16,7 @@ The server supports multiple players and is designed to be secure, responsive, a
 - Update each clients screens with the other players positions
 - Work on game logic
 - Implement things like gravity and platforms
+- Write a `test_client.c` so that the server can recieve signals and update the main clients screen.
 
 
 
