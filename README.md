@@ -15,14 +15,15 @@ The server supports multiple players and is designed to be secure, responsive, a
 - `test_client.c` creates a non graphical client that "moves" every second
 - Update each clients screens with the other players positions
 - Broadcaster stops sending signals if a client is no longer active
+- Player Gravity
+- Player horizontal accel and friction
+- Server side inputs
 
 ## Goals
 - Work on game logic
-- Implement things like gravity and platforms
 
 ## Issues
-- Only one square per client exists when testing but when one client disconnects the square attached to the remaining client
-
+- No Known
 
 
 ## Installation/Testing
