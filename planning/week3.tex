@@ -1,0 +1,35 @@
+\documentclass[12pt]{article}
+\usepackage{enumitem}
+\usepackage{geometry}
+\geometry{margin=1in}
+\title{Secure Multiplayer Game Server\\\large Week 3: SDL2 Client Kickoff}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Objectives}
+\begin{itemize}
+    \item Set up a basic SDL2 client that opens a window and displays a player avatar
+    \item Capture keyboard input (WASD) and send movement commands to the server
+    \item Update the server to receive and log movement input from clients
+    \item Define an initial network protocol (e.g., fixed-size or newline-delimited messages)
+\end{itemize}
+
+\section*{Checklist}
+\begin{itemize}[label=$\square$]
+    \item Set up SDL2 project with basic rendering loop
+    \item Draw local player as a colored square or sprite
+    \item Capture and process keyboard input (WASD)
+    \item Send structured movement messages to server via socket
+    \item Update server to receive and print movement commands
+    \item Use \texttt{recv()} and \texttt{send()} with error checking
+    \item Confirm basic client-server communication in real time
+    \item Document SDL2 build instructions in README
+\end{itemize}
+
+
+
+\end{document}

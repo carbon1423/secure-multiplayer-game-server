@@ -6,19 +6,28 @@
 #include <sys/socket.h>     // socket, bind, listen, accept, recv, send
 #include <pthread.h>
 
+struct MovementPacket {
+    int type;
+    float x;
+    float y;
+};
+
 void *handle_client(void *arg){
 
     int client_fd = *((int *) arg);
     free(arg);
-    char buffer[1024];
     int bytes_received;
+    struct MovementPacket move;
+    
+    while((bytes_received = recv(client_fd, &move, sizeof(move), 0)) > 0){
+        if(bytes_received != sizeof(move)){
+            printf("Partial packet received\n");
+        }
 
-    while((bytes_received = recv(client_fd, buffer, sizeof(buffer), 0)) > 0){
-        printf("Received %d bytes\n", bytes_received);
-        int bytes_sent = send(client_fd, buffer, bytes_received, 0);
-        if (bytes_sent < 0) {
-            perror("send");
-            break;
+        if (move.type == 1) {
+            printf("Client %d moved to (%.2f, %.2f)\n", client_fd, move.x, move.y);
+        } else {
+            printf("Unknown packet type: %d\n", move.type);
         }
     }
     if (bytes_received < 0) {
