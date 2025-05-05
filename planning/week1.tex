@@ -1,0 +1,71 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\title{Week 1 Checklist: TCP Echo Server}
+\date{}
+\begin{document}
+\maketitle
+
+\section*{Goal}
+Build a single-client TCP echo server in C. Set up the project repository, implement the basic server logic, test with \texttt{telnet}, and document progress in the README.
+
+\section*{1. Repository Setup}
+\begin{itemize}[label=--]
+    \item Create root folder: \texttt{secure-multiplayer-game-server/}
+    \item Add subfolder: \texttt{server/}
+    \item Create files: \texttt{server.c}, \texttt{Makefile}
+    \item Initialize Git: \texttt{git init}
+    \item Add \texttt{.gitignore}
+    \item Create \texttt{README.md}
+    \item Commit initial structure
+\end{itemize}
+
+\section*{2. Server Development}
+\begin{itemize}[label=--]
+    \item Include headers: \texttt{stdio.h}, \texttt{stdlib.h}, \texttt{string.h}, \texttt{unistd.h}, \texttt{arpa/inet.h}, \texttt{sys/socket.h}
+    \item Create socket using \texttt{socket()}
+    \item Bind to IP and port using \texttt{bind()}
+    \item Listen for connections with \texttt{listen()}
+    \item Accept one client using \texttt{accept()}
+    \item Receive data using \texttt{recv()}
+    \item Echo data using \texttt{send()}
+    \item Close sockets with \texttt{close()}
+    \item Handle errors with \texttt{perror()}
+\end{itemize}
+
+\section*{3. Testing}
+\begin{itemize}[label=--]
+    \item Compile: \texttt{gcc -o server server.c}
+    \item Run server: \texttt{./server}
+    \item In a second terminal, test with:
+    \begin{quote}
+        \texttt{telnet 127.0.0.1 8080}
+    \end{quote}
+    \item Confirm input is echoed
+    \item Test disconnect handling
+    \item Try empty input and large strings
+\end{itemize}
+
+\section*{4. Documentation}
+\begin{itemize}[label=--]
+    \item Update \texttt{README.md} with:
+    \begin{itemize}
+        \item Project overview
+        \item Week 1 features
+        \item How to build
+        \item How to test
+        \item Limitations and next steps
+        \item Link to project plan PDF (optional)
+    \end{itemize}
+    \item Stage and commit changes
+\end{itemize}
+
+\section*{5. Done}
+\begin{itemize}[label=--]
+    \item Push to GitHub or save a backup
+    \item Mark Week 1 complete
+    \item Save screenshots or logs for demo
+\end{itemize}
+
+\end{document}

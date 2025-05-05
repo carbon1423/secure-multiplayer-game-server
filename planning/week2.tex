@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\title{Week 2 Checklist: Handle Multiple Clients}
+\date{}
+\begin{document}
+\maketitle
+
+\section*{Goal}
+Extend the server to support multiple clients. Use threading or I/O multiplexing to handle multiple simultaneous connections. Update the README and test the new functionality.
+
+\section*{1. Threading or Multiplexing}
+\begin{itemize}[label=--]
+    \item Choose a strategy: \texttt{pthread} (threads) or \texttt{select()} (I/O multiplexing)
+    \item If using threads:
+    \begin{itemize}
+        \item Create a new thread for each client using \texttt{pthread\_create()}
+        \item Detach or join threads appropriately
+    \end{itemize}
+    \item If using \texttt{select()}:
+    \begin{itemize}
+        \item Add listening socket and client sockets to fd set
+        \item Use \texttt{FD\_SET}, \texttt{FD\_ISSET}, and \texttt{select()} loop
+    \end{itemize}
+\end{itemize}
+
+\section*{2. Server Logic Changes}
+\begin{itemize}[label=--]
+    \item Accept multiple client connections in a loop
+    \item Ensure each client gets independent handling
+    \item Add printing/logging for new connections
+    \item Ensure clean handling of client disconnects
+\end{itemize}
+
+\section*{3. Testing}
+\begin{itemize}[label=--]
+    \item Run multiple \texttt{telnet} or \texttt{nc} sessions simultaneously
+    \item Confirm each client can send and receive messages independently
+    \item Ensure server does not crash or hang with more than one client
+    \item Validate graceful handling of one client disconnecting while others remain
+\end{itemize}
+
+\section*{4. Documentation}
+\begin{itemize}[label=--]
+    \item Update \texttt{README.md}:
+    \begin{itemize}
+        \item Note new multi-client support
+        \item Explain which strategy was used (\texttt{pthread} or \texttt{select})
+        \item Update testing instructions
+    \end{itemize}
+    \item Commit code and README updates
+\end{itemize}
+
+\section*{5. Done}
+\begin{itemize}[label=--]
+    \item Push updates to GitHub
+    \item Mark Week 2 complete in project plan
+    \item Note any bugs or limitations to fix in Week 3
+\end{itemize}
+
+\end{document}
