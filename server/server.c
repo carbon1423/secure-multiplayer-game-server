@@ -64,6 +64,9 @@ void *handle_client(void *arg){
         perror("recv");
     }
     close(client_fd);
+    pthread_mutex_lock(&players_lock);
+    players[player_id].active = 0;
+    pthread_mutex_unlock(&players_lock);
     pthread_exit(NULL);
 
 }
@@ -77,7 +80,7 @@ void *broadcast_thread(void *arg){
         for(int i = 0;i < MAX_CLIENTS; i++){
             if(players[i].active){
                 packet.players[packet.count].x = players[i].x;
-                packet.players[packet.count].x = players[i].x;
+                packet.players[packet.count].y = players[i].y;
                 packet.count++;
             }
         }
@@ -148,6 +151,12 @@ int main() {
                 players[i].client_fd = client_fd;
                 players[i].x = 0;
                 players[i].y = 0;
+                int sent = send(client_fd, &player_id, sizeof(player_id), 0);
+                if(sent < 0){
+                    perror("send");
+                    close(server_fd);
+                    exit(EXIT_FAILURE);
+                }
                 break;
             }
         }

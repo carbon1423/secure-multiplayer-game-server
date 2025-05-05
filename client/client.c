@@ -57,6 +57,13 @@ int main() {
         perror("connect");
         exit(EXIT_FAILURE);
     }
+    int player_id;
+    int bytes_received = recv(sock_fd, &player_id, sizeof(player_id), 0);
+    if(bytes_received < 0){
+        perror("recv");
+        close(sock_fd);
+        exit(EXIT_FAILURE);
+    }
 
     while (running) {
         Uint32 frameStart = SDL_GetTicks();
@@ -84,15 +91,17 @@ int main() {
         struct BroadcastPacket packet;
         int bytes_recv = recv(sock_fd, &packet, sizeof(packet), 0);
         SDL_Rect other;
-        other.w = 50;
+        other.w = 100;
         other.h = 50;
 
         if(bytes_recv > 0){
             for(int i = 0; i < packet.count; i++){
-                other.x = packet.players[i].x;
-                other.y = packet.players[i].y;
-                SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // green player
-                SDL_RenderFillRect(renderer, &other);
+                if(player_id != i){
+                    other.x = packet.players[i].x;
+                    other.y = packet.players[i].y;
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // blue player
+                    SDL_RenderFillRect(renderer, &other);
+                }
                 
             }
         }
