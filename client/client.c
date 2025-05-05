@@ -5,17 +5,27 @@
 #include <arpa/inet.h>        // sockaddr_in, inet_pton, htons
 #include <sys/socket.h>       // socket, connect, send
 #include <SDL2/SDL.h>         // SDL2 main headers
+#define MAX_PLAYERS 16
 
-const int FPS = 60;
-const Uint32 frameDelay = 1000 / FPS;  // ~16 ms
 struct MovementPacket {
     int type;
     float x;
     float y;
 };
 
+struct BroadcastPacket {
+    int count;
+    struct {
+        float x;
+        float y;
+    } players[MAX_PLAYERS];
+};
+
 
 int main() {
+    const int FPS = 60;
+    const Uint32 frameDelay = 1000 / FPS;  // ~16 ms
+
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_Window *window = SDL_CreateWindow("SDL2 Client",
@@ -69,9 +79,24 @@ int main() {
                 }
             }
         }
-
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // black background
         SDL_RenderClear(renderer);
+        struct BroadcastPacket packet;
+        int bytes_recv = recv(sock_fd, &packet, sizeof(packet), 0);
+        SDL_Rect other;
+        other.w = 50;
+        other.h = 50;
+
+        if(bytes_recv > 0){
+            for(int i = 0; i < packet.count; i++){
+                other.x = packet.players[i].x;
+                other.y = packet.players[i].y;
+                SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // green player
+                SDL_RenderFillRect(renderer, &other);
+                
+            }
+        }
+        
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // green player
         SDL_RenderFillRect(renderer, &player);
         SDL_RenderPresent(renderer);

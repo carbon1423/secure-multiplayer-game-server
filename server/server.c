@@ -5,6 +5,15 @@
 #include <arpa/inet.h>      // inet_ntoa, htons, sockaddr_in
 #include <sys/socket.h>     // socket, bind, listen, accept, recv, send
 #include <pthread.h>
+#define MAX_CLIENTS 16
+
+struct BroadcastPacket {
+    int count;
+    struct {
+        float x;
+        float y;
+    } players[MAX_CLIENTS];
+};
 
 struct MovementPacket {
     int type;
@@ -12,9 +21,26 @@ struct MovementPacket {
     float y;
 };
 
-void *handle_client(void *arg){
+typedef struct {
+    int active;
+    int client_fd;
+    float x, y;
+} Player;
 
-    int client_fd = *((int *) arg);
+typedef struct {
+    int client_fd;
+    int player_id;
+} ClientArgs;
+
+
+pthread_mutex_t players_lock = PTHREAD_MUTEX_INITIALIZER;
+Player players[MAX_CLIENTS];
+
+
+void *handle_client(void *arg){
+    ClientArgs *args = (ClientArgs *)arg;
+    int client_fd = args->client_fd;
+    int player_id = args->player_id;
     free(arg);
     int bytes_received;
     struct MovementPacket move;
@@ -26,6 +52,10 @@ void *handle_client(void *arg){
 
         if (move.type == 1) {
             printf("Client %d moved to (%.2f, %.2f)\n", client_fd, move.x, move.y);
+            pthread_mutex_lock(&players_lock);
+            players[player_id].x = move.x;
+            players[player_id].y = move.y;
+            pthread_mutex_unlock(&players_lock);
         } else {
             printf("Unknown packet type: %d\n", move.type);
         }
@@ -38,7 +68,37 @@ void *handle_client(void *arg){
 
 }
 
+void *broadcast_thread(void *arg){
+    while (1){
+        struct BroadcastPacket packet;
+        packet.count = 0;
+
+        pthread_mutex_lock(&players_lock);
+        for(int i = 0;i < MAX_CLIENTS; i++){
+            if(players[i].active){
+                packet.players[packet.count].x = players[i].x;
+                packet.players[packet.count].x = players[i].x;
+                packet.count++;
+            }
+        }
+        pthread_mutex_unlock(&players_lock);
+
+        for(int i = 0; i < MAX_CLIENTS; i ++){
+            if(players[i].active) {
+                ssize_t sent = send(players[i].client_fd, &packet, sizeof(packet), 0);
+                if (sent < 0) {
+                    perror("send");
+                }
+            }
+        }
+
+        usleep(33333);
+    }
+    return arg;
+}
+
 int main() {
+
     int server_fd;
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
@@ -65,20 +125,47 @@ int main() {
         exit(EXIT_FAILURE);
     }
     printf("Server listening...\n");
+    pthread_t broadcast_tid;
+    pthread_create(&broadcast_tid,NULL,broadcast_thread,NULL);
+    pthread_detach(broadcast_tid);
     while(1){
         struct sockaddr_in client_addr; 
         socklen_t client_len = sizeof(client_addr);
+        
         int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
-        // printf("Client connected\n");
         if(client_fd < 0){
             perror("accept");
             close(server_fd);
             exit(EXIT_FAILURE);
+        }        
+
+        int player_id = -1;
+        pthread_mutex_lock(&players_lock);
+        for (int i = 0; i < MAX_CLIENTS; i++){
+            if(!players[i].active){
+                player_id = i;
+                players[i].active = 1;
+                players[i].client_fd = client_fd;
+                players[i].x = 0;
+                players[i].y = 0;
+                break;
+            }
         }
-        int *client_fd_ptr = malloc(sizeof(int));
-        *client_fd_ptr = client_fd;
+        pthread_mutex_unlock(&players_lock);
+
+        if (player_id == -1) {
+            printf("Server full\n");
+            close(client_fd);
+            continue;
+        }
+
+        
+        ClientArgs *client_args = malloc(sizeof(ClientArgs));
+        client_args->client_fd = client_fd;
+        client_args->player_id = player_id;
+
         pthread_t tid;
-        pthread_create(&tid, NULL, handle_client, client_fd_ptr);
+        pthread_create(&tid, NULL, handle_client, client_args);
         pthread_detach(tid);
     }
 
