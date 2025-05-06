@@ -1,6 +1,11 @@
 #ifndef PACKET_H
 #define PACKET_H
 
+
+#define WIN_HEIGHT 300
+#define WIN_LENGTH 600
+#define PLAYER_HEIGHT 50
+#define PLAYER_WIDTH 50
 #define MAX_CLIENTS 16
 #define MAX_PLAYERS 16
 #define ACCEL 1.0f
@@ -12,7 +17,12 @@ struct BroadcastPacket {
     struct {
         float x;
         float y;
+
     } players[MAX_CLIENTS];
+    struct {
+        float x;
+        float y;
+    } bullets[MAX_CLIENTS];
 };
 
 struct MovementPacket {
@@ -26,6 +36,7 @@ typedef struct {
     int left;
     int right;
     int jump;
+    int mouseX,mouseY;
 } InputPacket;
 
 typedef struct {
@@ -34,7 +45,14 @@ typedef struct {
     float x, y;
     float vx, vy;
     int on_ground;
+    int is_shooting; //0 no, 1 right, 2 left
 } Player;
+typedef struct {
+    int still_render;
+    float startX, startY;
+    int x, y;
+    int vx, vy;
+} Bullet;
 
 typedef struct {
     int client_fd;
