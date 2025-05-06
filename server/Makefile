@@ -1,7 +1,7 @@
 # Makefile for the TCP Echo Server
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -pthread
+CFLAGS = -Wall -Wextra -g -pthread -lm
 TARGET = server
 SRC = server.c
 

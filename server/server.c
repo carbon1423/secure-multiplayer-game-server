@@ -13,6 +13,7 @@
 
 pthread_mutex_t players_lock = PTHREAD_MUTEX_INITIALIZER;
 Player players[MAX_CLIENTS];
+Bullet bullets[MAX_CLIENTS];
 
 
 void *handle_client(void *arg){
@@ -37,8 +38,7 @@ void *handle_client(void *arg){
             }
             
             pthread_mutex_lock(&players_lock);
-            // players[player_id].x = move.x;
-            // players[player_id].y = move.y;
+
             players[player_id].vx += ax;
             if(ax == 0){
                 players[player_id].vx *= FRICTION;
@@ -59,8 +59,8 @@ void *handle_client(void *arg){
             }
             players[player_id].y += players[player_id].vy;
 
-            if(players[player_id].y >= 550){
-                players[player_id].y = 550;
+            if(players[player_id].y >= WIN_HEIGHT-PLAYER_HEIGHT){
+                players[player_id].y = WIN_HEIGHT-PLAYER_HEIGHT;
                 players[player_id].vy = 0;
                 players[player_id].on_ground = 1;
             }else{
@@ -71,6 +71,22 @@ void *handle_client(void *arg){
                 players[player_id].vy = -10;
                 players[player_id].on_ground = 0;
             }
+            if(input.mouseX && input.mouseY){
+                bullets[player_id].still_render = 1;
+                float dx = input.mouseX - players[player_id].x;
+                float dy = input.mouseY - players[player_id].y;
+                float length = sqrtf(dx*dx + dy*dy);
+                if (length != 0) {
+                    dx /= length;
+                    dy /= length;
+                }
+                bullets[player_id].startX = players[player_id].x;
+                bullets[player_id].startY = players[player_id].y;
+                bullets[player_id].vx = dx * 5.0f;
+                bullets[player_id].vy = dy * 5.0f;
+            }
+            bullets[player_id].x += bullets[player_id].vx;
+            bullets[player_id].y += bullets[player_id].vy;
             pthread_mutex_unlock(&players_lock);
             printf("Client %d moved to (%.2f, %.2f)\n", client_fd, players[player_id].x, players[player_id].y);
         } else {
@@ -85,6 +101,14 @@ void *handle_client(void *arg){
     players[player_id].client_fd = -1;
     players[player_id].x = 0;
     players[player_id].y = 0;
+    players[player_id].is_shooting = 0;
+    bullets[player_id].still_render = 0;
+    bullets[player_id].x = 0;
+    bullets[player_id].y = 0;
+    bullets[player_id].vx = 0;
+    bullets[player_id].vy = 0;
+    bullets[player_id].startX = 0;
+    bullets[player_id].startY = 0;
     pthread_exit(NULL);
 
 }
@@ -97,6 +121,8 @@ void *broadcast_thread(void *arg){
         pthread_mutex_lock(&players_lock);
         for(int i = 0;i < MAX_CLIENTS; i++){
             if(players[i].active){
+                packet.bullets[packet.count].x = bullets[i].x;
+                packet.bullets[packet.count].y = bullets[i].y;
                 packet.players[packet.count].x = players[i].x;
                 packet.players[packet.count].y = players[i].y;
                 packet.count++;
