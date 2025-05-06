@@ -14,132 +14,124 @@
 pthread_mutex_t players_lock = PTHREAD_MUTEX_INITIALIZER;
 Player players[MAX_CLIENTS];
 Bullet bullets[MAX_CLIENTS];
+InputPacket latest_inputs[MAX_CLIENTS];
 
-
-void *handle_client(void *arg){
+void *handle_client(void *arg) {
     ClientArgs *args = (ClientArgs *)arg;
     int client_fd = args->client_fd;
     int player_id = args->player_id;
     free(arg);
-    int bytes_received;
-    InputPacket input;
     
-    while((bytes_received = recv(client_fd, &input, sizeof(input), 0)) > 0){
-        if(bytes_received != sizeof(input)){
-            printf("Partial packet received\n");
-        }
-
-        if (input.type == 1) {
-            float ax = 0;
-            if(input.left){
-                ax = -ACCEL;
-            }else if(input.right){
-                ax = ACCEL;
-            }
-            
+    InputPacket input;
+    ssize_t bytes_received;
+    
+    while ((bytes_received = recv(client_fd, &input, sizeof(input), 0)) > 0) {
+        if (bytes_received == sizeof(input)) {
             pthread_mutex_lock(&players_lock);
-
-            players[player_id].vx += ax;
-            if(ax == 0){
-                players[player_id].vx *= FRICTION;
-            }
-            if(fabs(players[player_id].vx) < 0.05f){
-                players[player_id].vx = 0;
-            }
-            if (players[player_id].vx > MAX_SPEED){ 
-                players[player_id].vx = MAX_SPEED;
-            }
-            if (players[player_id].vx < -MAX_SPEED){ 
-                players[player_id].vx = -MAX_SPEED;
-            }
-            players[player_id].x += players[player_id].vx;
-
-            if(!players[player_id].on_ground){
-                players[player_id].vy += 0.7;
-            }
-            players[player_id].y += players[player_id].vy;
-
-            if(players[player_id].y >= WIN_HEIGHT-PLAYER_HEIGHT){
-                players[player_id].y = WIN_HEIGHT-PLAYER_HEIGHT;
-                players[player_id].vy = 0;
-                players[player_id].on_ground = 1;
-            }else{
-                players[player_id].on_ground = 0;
-            }
-
-            if(input.jump && players[player_id].on_ground){
-                players[player_id].vy = -10;
-                players[player_id].on_ground = 0;
-            }
-            if(input.mouseX && input.mouseY){
-                bullets[player_id].still_render = 1;
-                float dx = input.mouseX - players[player_id].x;
-                float dy = input.mouseY - players[player_id].y;
-                float length = sqrtf(dx*dx + dy*dy);
-                if (length != 0) {
-                    dx /= length;
-                    dy /= length;
-                }
-                bullets[player_id].startX = players[player_id].x;
-                bullets[player_id].startY = players[player_id].y;
-                bullets[player_id].vx = dx * 5.0f;
-                bullets[player_id].vy = dy * 5.0f;
-            }
-            bullets[player_id].x += bullets[player_id].vx;
-            bullets[player_id].y += bullets[player_id].vy;
+            latest_inputs[player_id] = input;
             pthread_mutex_unlock(&players_lock);
-            printf("Client %d moved to (%.2f, %.2f)\n", client_fd, players[player_id].x, players[player_id].y);
-        } else {
-            printf("Unknown packet type: %d\n", input.type);
         }
     }
-    if (bytes_received < 0) {
-        perror("recv");
-    }
-    close(client_fd);
+    
+    // Cleanup on disconnect
+    pthread_mutex_lock(&players_lock);
     players[player_id].active = 0;
     players[player_id].client_fd = -1;
-    players[player_id].x = 0;
-    players[player_id].y = 0;
-    players[player_id].is_shooting = 0;
     bullets[player_id].still_render = 0;
-    bullets[player_id].x = 0;
-    bullets[player_id].y = 0;
-    bullets[player_id].vx = 0;
-    bullets[player_id].vy = 0;
-    bullets[player_id].startX = 0;
-    bullets[player_id].startY = 0;
+    pthread_mutex_unlock(&players_lock);
+    
+    close(client_fd); 
     pthread_exit(NULL);
-
 }
 
 void *broadcast_thread(void *arg){
-    while (1){
-        struct BroadcastPacket packet;
+    while (1) {
+        BroadcastPacket packet;
         packet.count = 0;
 
         pthread_mutex_lock(&players_lock);
-        for(int i = 0;i < MAX_CLIENTS; i++){
-            if(players[i].active){
-                packet.bullets[packet.count].x = bullets[i].x;
-                packet.bullets[packet.count].y = bullets[i].y;
-                packet.players[packet.count].x = players[i].x;
-                packet.players[packet.count].y = players[i].y;
-                packet.count++;
-            }
-        }
-        pthread_mutex_unlock(&players_lock);
 
-        for(int i = 0; i < MAX_CLIENTS; i ++){
-            if(players[i].active) {
-                ssize_t sent = send(players[i].client_fd, &packet, sizeof(packet), 0);
-                if (sent < 0) {
-                    perror("send");
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (!players[i].active) continue;
+
+            InputPacket input = latest_inputs[i];
+
+            // ===== Movement =====
+            float ax = 0;
+            if (input.type & INPUT_MOVE) {
+                if (input.left) ax -= ACCEL;
+                if (input.right) ax += ACCEL;
+            }
+
+            players[i].vx += ax;
+            if (ax == 0) players[i].vx *= FRICTION;
+            if (fabs(players[i].vx) < 0.05f) players[i].vx = 0;
+            if (players[i].vx > MAX_SPEED) players[i].vx = MAX_SPEED;
+            if (players[i].vx < -MAX_SPEED) players[i].vx = -MAX_SPEED;
+            players[i].x += players[i].vx;
+
+            // ===== Jump =====
+            if (!players[i].on_ground) players[i].vy += 0.7;
+            players[i].y += players[i].vy;
+            if (players[i].y >= WIN_HEIGHT - PLAYER_HEIGHT) {
+                players[i].y = WIN_HEIGHT - PLAYER_HEIGHT;
+                players[i].vy = 0;
+                players[i].on_ground = 1;
+            } else {
+                players[i].on_ground = 0;
+            }
+
+            if ((input.type & INPUT_JUMP) && players[i].on_ground) {
+                players[i].vy = -10;
+                players[i].on_ground = 0;
+            }
+
+            // ===== Shooting =====
+            if ((input.type & INPUT_SHOOT) && !bullets[i].still_render) {
+                float dx = input.mouseX - players[i].x;
+                float dy = input.mouseY - players[i].y;
+                float len = sqrtf(dx * dx + dy * dy);
+                if (len != 0) {
+                    dx /= len;
+                    dy /= len;
+                }
+                bullets[i].x = players[i].x;
+                bullets[i].y = players[i].y;
+                bullets[i].vx = dx * 5.0f;
+                bullets[i].vy = dy * 5.0f;
+                bullets[i].still_render = 1;
+            }
+
+            // ===== Bullet Movement =====
+            if (bullets[i].still_render) {
+                bullets[i].x += bullets[i].vx;
+                bullets[i].y += bullets[i].vy;
+                if (bullets[i].x < 0 || bullets[i].x > WIN_LENGTH ||
+                    bullets[i].y < 0 || bullets[i].y > WIN_HEIGHT) {
+                    bullets[i].still_render = 0;
                 }
             }
+
+            // ===== Fill Packet =====
+            packet.players[packet.count].x = players[i].x;
+            packet.players[packet.count].y = players[i].y;
+            packet.bullets[packet.count].x = bullets[i].x;
+            packet.bullets[packet.count].y = bullets[i].y;
+            packet.bullets[packet.count].still_render = bullets[i].still_render;
+            packet.count++;
         }
 
-        usleep(33333);
+        pthread_mutex_unlock(&players_lock);
+
+        // Broadcast to all clients
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (players[i].active) {
+                ssize_t sent = send(players[i].client_fd, &packet, sizeof(packet), 0);
+                if (sent < 0) perror("send");
+            }
+        }
+
+        usleep(1000000 / 30); // 30 FPS
     }
     return arg;
 }

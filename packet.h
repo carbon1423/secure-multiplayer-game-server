@@ -1,7 +1,6 @@
 #ifndef PACKET_H
 #define PACKET_H
 
-
 #define WIN_HEIGHT 300
 #define WIN_LENGTH 600
 #define PLAYER_HEIGHT 50
@@ -12,31 +11,17 @@
 #define FRICTION 0.7f
 #define MAX_SPEED 10.0f  
 
-struct BroadcastPacket {
-    int count;
-    struct {
-        float x;
-        float y;
-
-    } players[MAX_CLIENTS];
-    struct {
-        float x;
-        float y;
-    } bullets[MAX_CLIENTS];
-};
-
-struct MovementPacket {
-    int type;
-    float x;
-    float y;
-};
+// Input type bit flags
+#define INPUT_MOVE   0x1
+#define INPUT_JUMP   0x2
+#define INPUT_SHOOT  0x4
 
 typedef struct {
-    int type;
-    int left;
-    int right;
-    int jump;
-    int mouseX,mouseY;
+    uint8_t type;    // bit flags (move, jump, shoot)
+    uint8_t left;    // boolean
+    uint8_t right;   // boolean
+    int mouseX;
+    int mouseY;
 } InputPacket;
 
 typedef struct {
@@ -45,13 +30,12 @@ typedef struct {
     float x, y;
     float vx, vy;
     int on_ground;
-    int is_shooting; //0 no, 1 right, 2 left
 } Player;
+
 typedef struct {
     int still_render;
-    float startX, startY;
-    int x, y;
-    int vx, vy;
+    float x, y;       // current position
+    float vx, vy;     // velocity
 } Bullet;
 
 typedef struct {
@@ -59,4 +43,18 @@ typedef struct {
     int player_id;
 } ClientArgs;
 
-#endif
+typedef struct {
+    int count;
+    struct {
+        float x;
+        float y;
+    } players[MAX_CLIENTS];
+    
+    struct {
+        float x;
+        float y;
+        int still_render;
+    } bullets[MAX_CLIENTS];
+} BroadcastPacket;
+
+#endif // PACKET_H

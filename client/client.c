@@ -60,24 +60,23 @@ int main() {
         int mouseX,mouseY;
         const Uint8 *keys = SDL_GetKeyboardState(NULL);
         Uint32 mouseState = SDL_GetMouseState(&mouseX,&mouseY);
-        if(!mouseState){
-            InputPacket input = {
-                .type = 1,
-                .left = keys[SDL_SCANCODE_A],
-                .right = keys[SDL_SCANCODE_D],
-                .jump = (keys[SDL_SCANCODE_W]),
-                .mouseX = NULL,
-                .mouseY = NULL
-            };
-        }else if(mouseState && SDL_BUTTON(SDL_BUTTON_LEFT)){
-            InputPacket input = {
-                .type = 1,
-                .left = keys[SDL_SCANCODE_A],
-                .right = keys[SDL_SCANCODE_D],
-                .jump = (keys[SDL_SCANCODE_W]),
-                .mouseX = mouseX,
-                .mouseY = mouseY
-            };
+        
+        InputPacket input = {
+            .type = 0,
+            .left = keys[SDL_SCANCODE_A],
+            .right = keys[SDL_SCANCODE_D],
+            .mouseX = mouseX,
+            .mouseY = mouseY
+        };
+        input.type = 0;
+        if (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_D]) {
+            input.type |= INPUT_MOVE;
+        }
+        if (keys[SDL_SCANCODE_W]) {
+            input.type |= INPUT_JUMP;
+        }
+        if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+            input.type |= INPUT_SHOOT;
         }
 
         ssize_t sent = send(sock_fd, &input, sizeof(input), 0);
@@ -90,16 +89,23 @@ int main() {
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // black background
         SDL_RenderClear(renderer);
-        struct BroadcastPacket broad_pack;
+        BroadcastPacket broad_pack;
         int bytes_recv = recv(sock_fd, &broad_pack, sizeof(broad_pack), 0);
         SDL_Rect other;
         other.w = PLAYER_WIDTH;
         other.h = PLAYER_HEIGHT;
-        
+        SDL_Rect proj;
+        proj.w = 10;
+        proj.h = 5;
 
         if(bytes_recv > 0){
             for(int i = 0; i < broad_pack.count; i++){
-                
+                if(broad_pack.bullets[i].still_render){
+                    proj.x = broad_pack.bullets[i].x;
+                    proj.y = broad_pack.bullets[i].y;
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+                    SDL_RenderFillRect(renderer, &proj);
+                }
                 if(player_id != i){
                     other.x = broad_pack.players[i].x;
                     other.y = broad_pack.players[i].y;

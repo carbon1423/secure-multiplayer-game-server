@@ -7,7 +7,6 @@ The server supports multiple players and is designed to be secure, responsive, a
 - Server creates a TCP socket
 - Binds to `127.0.0.1:8080`
 - Accepts one client
-- Echoes all input back to client
 - Set up hosting multiple clients using threads
 - Clean connection and disconnection of clients
 - Basic SDL2 game logic
