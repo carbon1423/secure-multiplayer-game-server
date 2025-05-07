@@ -30,6 +30,7 @@ typedef struct {
     float x, y;
     float vx, vy;
     int on_ground;
+    int health;
 } Player;
 
 typedef struct {
@@ -48,6 +49,7 @@ typedef struct {
     struct {
         float x;
         float y;
+        int remaining_health;
     } players[MAX_CLIENTS];
     
     struct {

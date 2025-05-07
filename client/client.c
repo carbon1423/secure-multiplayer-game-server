@@ -100,19 +100,23 @@ int main() {
 
         if(bytes_recv > 0){
             for(int i = 0; i < broad_pack.count; i++){
+                if(broad_pack.players[i].remaining_health == 0){
+                    running = 0;
+                    break;
+                }
                 if(broad_pack.bullets[i].still_render){
-                    proj.x = broad_pack.bullets[i].x;
+                    proj.x = broad_pack.bullets[i].x + 25;
                     proj.y = broad_pack.bullets[i].y;
                     SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
                     SDL_RenderFillRect(renderer, &proj);
                 }
-                if(player_id != i){
+                if(player_id != i && broad_pack.players[i].remaining_health > 0){
                     other.x = broad_pack.players[i].x;
                     other.y = broad_pack.players[i].y;
                     SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // blue player
                     SDL_RenderFillRect(renderer, &other);
                 }
-                else{
+                else if (broad_pack.players[i].remaining_health > 0){
                     other.x = broad_pack.players[i].x;
                     other.y = broad_pack.players[i].y;
                     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // green player
