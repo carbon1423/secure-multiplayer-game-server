@@ -17,9 +17,11 @@ The server supports multiple players and is designed to be secure, responsive, a
 - Player Gravity
 - Player horizontal accel and friction
 - Server side inputs
+- Players are able to shoot projectiles 
+- Player Health
 
 ## Goals
-- Work on game logic
+- Implement platforms that you can jump from underneath to get onto
 
 ## Issues
 - No Known
