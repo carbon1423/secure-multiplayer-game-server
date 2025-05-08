@@ -47,6 +47,7 @@ typedef struct {
 typedef struct {
     int count;
     struct {
+        int id;
         float x;
         float y;
         int remaining_health;

@@ -100,28 +100,28 @@ int main() {
 
         if(bytes_recv > 0){
             for(int i = 0; i < broad_pack.count; i++){
-                if(broad_pack.players[i].remaining_health == 0){
+                if(broad_pack.players[i].remaining_health == 0 && player_id == i){
                     running = 0;
                     break;
                 }
                 if(broad_pack.bullets[i].still_render){
-                    proj.x = broad_pack.bullets[i].x + 25;
+                    proj.x = broad_pack.bullets[i].x;
                     proj.y = broad_pack.bullets[i].y;
                     SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
                     SDL_RenderFillRect(renderer, &proj);
                 }
-                if(player_id != i && broad_pack.players[i].remaining_health > 0){
+                int id = broad_pack.players[i].id;
+                if (broad_pack.players[i].remaining_health > 0) {
                     other.x = broad_pack.players[i].x;
                     other.y = broad_pack.players[i].y;
-                    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // blue player
+                    if (id == player_id) {
+                        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);  // self = green
+                    } else {
+                        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);  // others = blue
+                    }
                     SDL_RenderFillRect(renderer, &other);
                 }
-                else if (broad_pack.players[i].remaining_health > 0){
-                    other.x = broad_pack.players[i].x;
-                    other.y = broad_pack.players[i].y;
-                    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // green player
-                    SDL_RenderFillRect(renderer, &other);
-                }
+
                 
             }
         }

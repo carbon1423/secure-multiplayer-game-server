@@ -82,7 +82,7 @@ void *broadcast_thread(void *arg){
             }
 
             if ((input.type & INPUT_JUMP) && players[i].on_ground) {
-                players[i].vy = -10;
+                players[i].vy = -15;
                 players[i].on_ground = 0;
             }
 
@@ -97,8 +97,8 @@ void *broadcast_thread(void *arg){
                 }
                 bullets[i].x = players[i].x;
                 bullets[i].y = players[i].y;
-                bullets[i].vx = dx * 10.0f;
-                bullets[i].vy = dy * 10.0f;
+                bullets[i].vx = dx * 20.0f;
+                bullets[i].vy = dy * 20.0f;
                 bullets[i].still_render = 1;
             }
 
@@ -107,7 +107,7 @@ void *broadcast_thread(void *arg){
                 bullets[i].x += bullets[i].vx;
                 bullets[i].y += bullets[i].vy;
                 for(int j = 0; j < MAX_CLIENTS; j ++){
-                    if(j != i && bullets[i].x > players[j].x && bullets[i].x < players[j].x + PLAYER_WIDTH && bullets[i].y > players[j].y && bullets[i].y < players[j].y + PLAYER_HEIGHT){
+                    if(j != i && players[j].active && bullets[i].x > players[j].x && bullets[i].x < players[j].x + PLAYER_WIDTH && bullets[i].y > players[j].y && bullets[i].y < players[j].y + PLAYER_HEIGHT){
                         players[j].health -= 1;
                         bullets[i].still_render = 0;
                     }
@@ -119,6 +119,7 @@ void *broadcast_thread(void *arg){
             }
 
             // ===== Fill Packet =====
+            packet.players[packet.count].id = i;
             packet.players[packet.count].x = players[i].x;
             packet.players[packet.count].y = players[i].y;
             packet.players[packet.count].remaining_health = players[i].health;
@@ -138,7 +139,7 @@ void *broadcast_thread(void *arg){
             }
         }
 
-        usleep(1000000 / 30); // 30 FPS
+        usleep(1000000 / 60); // 60 FPS
     }
     return arg;
 }
