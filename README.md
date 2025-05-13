@@ -19,12 +19,16 @@ The server supports multiple players and is designed to be secure, responsive, a
 - Server side inputs
 - Players are able to shoot projectiles 
 - Player Health
+- Platforms and tilemap
 
 ## Goals
-- Implement platforms that you can jump from underneath to get onto
+- Implement falling through a platform
+- Implement walls
 
 ## Issues
-- No Known
+- Player when holding jump flies through the platform
+- When a player falls off the map it stops anyone from being able to join
+
 
 
 ## Installation/Testing

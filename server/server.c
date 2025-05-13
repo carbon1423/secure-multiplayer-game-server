@@ -94,14 +94,6 @@ void *broadcast_thread(void *arg){
                 players[i].on_ground = 0;
             }
 
-            // if (players[i].y >= WIN_HEIGHT - PLAYER_HEIGHT) {
-            //     players[i].y = WIN_HEIGHT - PLAYER_HEIGHT;
-            //     players[i].vy = 0;
-            //     players[i].on_ground = 1;
-            // } else {
-            //     players[i].on_ground = 0;
-            // }
-
             if ((input.type & INPUT_JUMP) && players[i].on_ground) {
                 players[i].vy = -15;
                 players[i].on_ground = 0;
@@ -127,6 +119,15 @@ void *broadcast_thread(void *arg){
             if (bullets[i].still_render) {
                 bullets[i].x += bullets[i].vx;
                 bullets[i].y += bullets[i].vy;
+
+                int row = bullets[i].y / TILE_SIZE;
+                int col = bullets[i].x / TILE_SIZE;
+                if (row >= 0 && row < MAP_HEIGHT &&
+                    col >= 0 && col < MAP_WIDTH &&
+                    tilemap[row][col].type == TILE_SOLID) {
+                    bullets[i].still_render = 0;
+                }
+
                 for(int j = 0; j < MAX_CLIENTS; j ++){
                     if(j != i && players[j].active && bullets[i].x > players[j].x && bullets[i].x < players[j].x + PLAYER_WIDTH && bullets[i].y > players[j].y && bullets[i].y < players[j].y + PLAYER_HEIGHT){
                         players[j].health -= 1;
@@ -166,7 +167,11 @@ void *broadcast_thread(void *arg){
 }
 
 int main() {
-    generate_test_map();
+    if (!load_tilemap_from_file("../shared/level.txt")) {
+        fprintf(stderr, "Failed to load tilemap\n");
+        exit(1);
+    }
+
     int server_fd;
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));

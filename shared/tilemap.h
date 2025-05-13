@@ -16,4 +16,5 @@ extern Tile tilemap[MAP_HEIGHT][MAP_WIDTH];
 
 void generate_test_map(void);
 
+int load_tilemap_from_file(const char* path);
 #endif

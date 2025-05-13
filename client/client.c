@@ -16,7 +16,10 @@ int main() {
 
 
     SDL_Init(SDL_INIT_VIDEO);
-    generate_test_map();
+    if (!load_tilemap_from_file("../shared/level.txt")) {
+        fprintf(stderr, "Failed to load tilemap\n");
+        exit(1);
+    }
 
     SDL_Window *window = SDL_CreateWindow("SDL2 Client",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
