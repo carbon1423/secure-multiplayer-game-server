@@ -6,7 +6,10 @@
 #include <sys/socket.h>     // socket, bind, listen, accept, recv, send
 #include <pthread.h>
 #include <math.h>
-#include "../packet.h"
+#include "../shared/packet.h"
+#include "../shared/gameconfig.h"
+#include "../shared/tilemap.h"
+
 
 
 
@@ -73,13 +76,31 @@ void *broadcast_thread(void *arg){
             // ===== Jump =====
             if (!players[i].on_ground) players[i].vy += 0.7;
             players[i].y += players[i].vy;
-            if (players[i].y >= WIN_HEIGHT - PLAYER_HEIGHT) {
-                players[i].y = WIN_HEIGHT - PLAYER_HEIGHT;
+            int foot_y = players[i].y + PLAYER_HEIGHT;
+            int center_x = players[i].x + PLAYER_WIDTH / 2;
+
+            int tile_row = foot_y / TILE_SIZE;
+            int tile_col = center_x / TILE_SIZE;
+
+            if (tile_row >= 0 && tile_row < MAP_HEIGHT &&
+                tile_col >= 0 && tile_col < MAP_WIDTH &&
+                tilemap[tile_row][tile_col].type == TILE_SOLID) {
+
+                // Snap player to top of tile
+                players[i].y = tile_row * TILE_SIZE - PLAYER_HEIGHT;
                 players[i].vy = 0;
                 players[i].on_ground = 1;
             } else {
                 players[i].on_ground = 0;
             }
+
+            // if (players[i].y >= WIN_HEIGHT - PLAYER_HEIGHT) {
+            //     players[i].y = WIN_HEIGHT - PLAYER_HEIGHT;
+            //     players[i].vy = 0;
+            //     players[i].on_ground = 1;
+            // } else {
+            //     players[i].on_ground = 0;
+            // }
 
             if ((input.type & INPUT_JUMP) && players[i].on_ground) {
                 players[i].vy = -15;
@@ -145,7 +166,7 @@ void *broadcast_thread(void *arg){
 }
 
 int main() {
-
+    generate_test_map();
     int server_fd;
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));

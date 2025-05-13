@@ -1,15 +1,9 @@
 #ifndef PACKET_H
 #define PACKET_H
 
-#define WIN_HEIGHT 300
-#define WIN_LENGTH 600
-#define PLAYER_HEIGHT 50
-#define PLAYER_WIDTH 50
+
 #define MAX_CLIENTS 16
 #define MAX_PLAYERS 16
-#define ACCEL 1.0f
-#define FRICTION 0.7f
-#define MAX_SPEED 10.0f  
 
 // Input type bit flags
 #define INPUT_MOVE   0x1

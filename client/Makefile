@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g `sdl2-config --cflags`
 LDFLAGS = `sdl2-config --libs`
 
-SDL_SRC = client.c
+SDL_SRC = client.c tilemap.c ../shared/tilemap_logic.c
 TEST_SRC = test_client.c
 
 SDL_TARGET = client

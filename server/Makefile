@@ -3,7 +3,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -pthread
 TARGET = server
-SRC = server.c
+SRC = server.c ../shared/tilemap_logic.c
 
 .PHONY: all clean
 

@@ -5,7 +5,9 @@
 #include <arpa/inet.h>        // sockaddr_in, inet_pton, htons
 #include <sys/socket.h>       // socket, connect, send
 #include <SDL2/SDL.h>         // SDL2 main headers
-#include "../packet.h"
+#include "../shared/packet.h"
+#include "../shared/gameconfig.h"
+#include "tilemap.h"
 
 
 int main() {
@@ -14,6 +16,7 @@ int main() {
 
 
     SDL_Init(SDL_INIT_VIDEO);
+    generate_test_map();
 
     SDL_Window *window = SDL_CreateWindow("SDL2 Client",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -125,7 +128,7 @@ int main() {
                 
             }
         }
-
+        render_tilemap(renderer); 
         SDL_RenderPresent(renderer);
 
         Uint32 frameTime = SDL_GetTicks() - frameStart;
